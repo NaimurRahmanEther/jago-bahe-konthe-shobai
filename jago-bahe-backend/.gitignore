@@ -1,0 +1,10 @@
+# Env & secrets
+.env
+
+# Build output
+/bin/
+/out/
+*.exe
+
+# Go
+vendor/

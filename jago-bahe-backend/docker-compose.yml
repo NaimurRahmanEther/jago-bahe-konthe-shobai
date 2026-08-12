@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jago}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jago}
+      POSTGRES_DB: ${POSTGRES_DB:-jago}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jago} -d ${POSTGRES_DB:-jago}"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  migrate:
+    image: migrate/migrate:v4.17.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=postgres://${POSTGRES_USER:-jago}:${POSTGRES_PASSWORD:-jago}@postgres:5432/${POSTGRES_DB:-jago}?sslmode=disable"
+      - "up"
+
+  api:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-jago}:${POSTGRES_PASSWORD:-jago}@postgres:5432/${POSTGRES_DB:-jago}?sslmode=disable"
+      JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret-change-me}
+    ports:
+      - "8080:8080"
+    command: ["/app/api"]
+
+  worker:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-jago}:${POSTGRES_PASSWORD:-jago}@postgres:5432/${POSTGRES_DB:-jago}?sslmode=disable"
+    command: ["/app/worker"]
+
+volumes:
+  pgdata:

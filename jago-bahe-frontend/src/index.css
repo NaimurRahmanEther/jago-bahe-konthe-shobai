@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand */
+  --color-brand: #0f6e56;
+  --color-brand-dark: #0a4d3c;
+  --color-brand-tint: #e3f1ec;
+
+  /* Neutrals */
+  --color-canvas: #f6f5f1;
+  --color-surface: #ffffff;
+  --color-ink: #1a1c1a;
+  --color-muted: #5b625e;
+  --color-hairline: #e4e2db;
+
+  /* Status — pair each *-bg with *-fg + *-dot */
+  /* Muted, uncoloured grey: a pending report is awaiting its union admin's
+     screening decision and is not yet public — the badge reads "on hold", not a
+     lifecycle state the community is acting on. */
+  --color-pendingapproval-bg: #efedea; --color-pendingapproval-fg: #6b665c; --color-pendingapproval-dot: #9a9287;
+  --color-reported-bg: #eef0f2;  --color-reported-fg: #3f4954;  --color-reported-dot: #64748b;
+  --color-validated-bg: #dcefe8; --color-validated-fg: #0a4d3c; --color-validated-dot: #0f6e56;
+  --color-assigned-bg: #e7e8fb;  --color-assigned-fg: #383a8c;  --color-assigned-dot: #4f46e5;
+  --color-progress-bg: #dcecfb;  --color-progress-fg: #1e4e8c;  --color-progress-dot: #2563eb;
+  --color-blocked-bg: #fbf0d9;   --color-blocked-fg: #8a5a00;   --color-blocked-dot: #d99100;
+  --color-done-bg: #e3f3e0;      --color-done-fg: #2f6b2a;      --color-done-dot: #4d9c3f;
+  --color-resolved-bg: #d3efcd;  --color-resolved-fg: #1f6b1a;  --color-resolved-dot: #2e8b1f;
+  --color-reopened-bg: #fbe3e3;  --color-reopened-fg: #9a2c2c;  --color-reopened-dot: #dc2626;
+  /* Muted maroon, not Reopened's bright red: brightness carries the meaning —
+     Reopened is live and back to work, Rejected is terminal and off the record. */
+  --color-rejected-bg: #f2e5e5;  --color-rejected-fg: #7f3f3f;  --color-rejected-dot: #a85454;
+  /* Neutral grey, not Rejected's maroon: Withdrawn is terminal but carries no
+     judgement — the reporter simply retracted it, so it reads quiet, not adverse. */
+  --color-withdrawn-bg: #ebe9e4; --color-withdrawn-fg: #5f5a51; --color-withdrawn-dot: #9a9287;
+
+  /* Type */
+  --font-sans: "Anek Bangla", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale. The app ran on 17px body with 20px headings — a ratio of 1.18,
+     which reads as no hierarchy at all, and 137 uses of text-sm carried nearly
+     every screen. These five sizes are the ladder above and below the body.
+     Bengali body must never go under 1.7 line-height (Guideline §3); headings
+     may, and do. */
+  --text-display: 30px;         --text-display--line-height: 1.25;
+  --text-h1: 24px;              --text-h1--line-height: 1.35;
+  --text-h2: 20px;              --text-h2--line-height: 1.4;
+  --text-title: 21px;           --text-title--line-height: 1.4;
+  --text-meta: 14px;            --text-meta--line-height: 1.6;
+  --text-micro: 12px;           --text-micro--line-height: 1.5;
+
+  /* Shape */
+  --radius-card: 0.75rem;   /* 12px */
+  --radius-control: 0.5rem; /* 8px  */
+
+  /* Elevation — soft, low-opacity, never glossy */
+  --shadow-sm: 0 1px 2px rgb(26 28 26 / 0.04);
+  --shadow-md: 0 2px 4px rgb(26 28 26 / 0.05), 0 6px 16px rgb(26 28 26 / 0.06);
+  --shadow-lg: 0 8px 24px rgb(26 28 26 / 0.10), 0 2px 6px rgb(26 28 26 / 0.05);
+
+  /* Motion — restrained but eased; one calm, decelerating curve (Design Guideline §A.6) */
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-in: fade-in 420ms var(--ease-standard) both;
+  --animate-rise-in: rise-in 480ms var(--ease-standard) both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+/* Bengali-aware defaults */
+html { font-family: var(--font-sans); background: var(--color-canvas); color: var(--color-ink); }
+body { font-size: 17px; line-height: 1.75; margin: 0; }
+
+/* Honor reduced-motion for every entrance animation (Design Guideline §A.6) */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-rise-in {
+    animation: none !important;
+  }
+}
+
+/* Visible keyboard focus ring (Design Guideline §9) */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}

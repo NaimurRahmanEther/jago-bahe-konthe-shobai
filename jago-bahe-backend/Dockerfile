@@ -6,17 +6,20 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/api ./cmd/migrate ./cmd/setpassword
+
+RUN go build -o api ./cmd/api
+RUN go build -o migrate ./cmd/migrate
 
 FROM alpine:3.21
 
 WORKDIR /app
-RUN apk add --no-cache ca-certificates tzdata \
-    && adduser -D -u 10001 app
 
-COPY --from=build /out/ ./
+RUN apk add --no-cache ca-certificates tzdata
+
+COPY --from=build /app/api .
+COPY --from=build /app/migrate .
 COPY --from=build /app/migrations ./migrations
 
-USER app
 EXPOSE 8080
-CMD ["./api"]
+
+CMD ["sh", "-c", "./migrate up && exec ./api"]

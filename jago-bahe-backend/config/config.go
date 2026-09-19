@@ -6,8 +6,10 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"jago-bahe-backend/pkg/dotenv"
@@ -15,6 +17,9 @@ import (
 
 // Config is the fully-parsed, typed configuration for both the api and worker.
 type Config struct {
+	Production bool
+
+	AllowedOrigins []string
 	// HTTP
 	HTTPAddr string
 
@@ -37,12 +42,6 @@ type Config struct {
 	ResponseDeadline    time.Duration // D — first-response deadline; drives escalation
 	BlockerReviewWindow time.Duration // R — capped clock-pause while a blocker is judged
 
-	// Rate limiting (B8) — per-client-IP request budgets, refilled each window.
-	// Reads are unlimited; auth and write routes are capped to blunt brute-force
-	// and abuse. Zero disables a limiter.
-	AuthRateLimit   int           // requests per window allowed on /api/auth/*
-	WriteRateLimit  int           // requests per window allowed on write (non-GET) routes
-	RateLimitWindow time.Duration // the refill window for both budgets
 }
 
 // insecureJWTSecret is the dev placeholder; refusing it in production keeps an
@@ -54,8 +53,12 @@ const insecureJWTSecret = "dev-insecure-secret-change-me"
 func Load() (*Config, error) {
 	// Pick up a local .env for no-Docker runs; real env vars still win.
 	dotenv.Load("")
+	if err := validateEnvironment(); err != nil {
+		return nil, err
+	}
 
 	cfg := &Config{
+		Production:          os.Getenv("APP_ENV") == "production",
 		HTTPAddr:            getEnv("HTTP_ADDR", ":8080"),
 		DatabaseURL:         os.Getenv("DATABASE_URL"),
 		JWTSecret:           getEnv("JWT_SECRET", insecureJWTSecret),
@@ -63,9 +66,11 @@ func Load() (*Config, error) {
 		ValidityThreshold:   getEnvInt("VALIDITY_THRESHOLD", 5),
 		ResponseDeadline:    getEnvDuration("RESPONSE_DEADLINE", 7*24*time.Hour),
 		BlockerReviewWindow: getEnvDuration("BLOCKER_REVIEW_WINDOW", 72*time.Hour),
-		AuthRateLimit:       getEnvInt("AUTH_RATE_LIMIT", 20),
-		WriteRateLimit:      getEnvInt("WRITE_RATE_LIMIT", 60),
-		RateLimitWindow:     getEnvDuration("RATE_LIMIT_WINDOW", time.Minute),
+	}
+	for _, origin := range strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",") {
+		if origin = strings.TrimSpace(origin); origin != "" {
+			cfg.AllowedOrigins = append(cfg.AllowedOrigins, origin)
+		}
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -79,6 +84,12 @@ func Load() (*Config, error) {
 // D, R must be in-range, and a production run (APP_ENV=production) must set a
 // real JWT secret rather than ship the dev placeholder.
 func (c *Config) Validate() error {
+	for _, origin := range c.AllowedOrigins {
+		u, err := url.Parse(origin)
+		if err != nil || u.Host == "" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" || (u.Scheme != "https" && u.Scheme != "http") || strings.Contains(origin, "*") {
+			return fmt.Errorf("config: ALLOWED_ORIGINS must contain exact HTTP(S) origins without paths or wildcards")
+		}
+	}
 	switch {
 	case c.DatabaseURL == "":
 		return fmt.Errorf("config: DATABASE_URL is required")
@@ -90,9 +101,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("config: BLOCKER_REVIEW_WINDOW (R) must be > 0, got %s", c.BlockerReviewWindow)
 	case c.JWTTTL <= 0:
 		return fmt.Errorf("config: JWT_TTL must be > 0, got %s", c.JWTTTL)
-	case c.RateLimitWindow <= 0:
-		return fmt.Errorf("config: RATE_LIMIT_WINDOW must be > 0, got %s", c.RateLimitWindow)
-	case os.Getenv("APP_ENV") == "production" && c.JWTSecret == insecureJWTSecret:
+	case os.Getenv("APP_ENV") == "production" && (strings.TrimSpace(c.JWTSecret) == "" || c.JWTSecret == insecureJWTSecret):
 		return fmt.Errorf("config: JWT_SECRET must be set to a real secret in production")
 	}
 	return nil
@@ -114,15 +123,6 @@ func getEnvInt(key string, fallback int) int {
 	return fallback
 }
 
-func getEnvFloat(key string, fallback float64) float64 {
-	if v, ok := os.LookupEnv(key); ok && v != "" {
-		if f, err := strconv.ParseFloat(v, 64); err == nil {
-			return f
-		}
-	}
-	return fallback
-}
-
 func getEnvDuration(key string, fallback time.Duration) time.Duration {
 	if v, ok := os.LookupEnv(key); ok && v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
@@ -130,4 +130,24 @@ func getEnvDuration(key string, fallback time.Duration) time.Duration {
 		}
 	}
 	return fallback
+}
+
+// Optional settings may be absent, but explicitly malformed values must not
+// silently change deployment behavior by falling back to development defaults.
+func validateEnvironment() error {
+	for _, key := range []string{"VALIDITY_THRESHOLD"} {
+		if value := os.Getenv(key); value != "" {
+			if _, err := strconv.Atoi(value); err != nil {
+				return fmt.Errorf("config: %s must be an integer", key)
+			}
+		}
+	}
+	for _, key := range []string{"JWT_TTL", "RESPONSE_DEADLINE", "BLOCKER_REVIEW_WINDOW"} {
+		if value := os.Getenv(key); value != "" {
+			if _, err := time.ParseDuration(value); err != nil {
+				return fmt.Errorf("config: %s must be a duration such as 1m or 24h", key)
+			}
+		}
+	}
+	return nil
 }

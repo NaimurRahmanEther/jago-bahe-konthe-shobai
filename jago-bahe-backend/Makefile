@@ -2,15 +2,15 @@
 
 # Bring up the full stack: postgres + migrate + api + worker.
 up:
-	docker compose up --build
+	docker compose --env-file .env -f ../docker-compose.yml up --build
 
-# Tear everything down, including the database volume.
+# Stop the stack while preserving database data.
 down:
-	docker compose down -v
+	docker compose --env-file .env -f ../docker-compose.yml down
 
 # Apply migrations against the running database (Docker path).
 migrate:
-	docker compose run --rm migrate
+	docker compose --env-file .env -f ../docker-compose.yml run --rm migrate
 
 # No-Docker path: apply / roll back migrations with the built-in Go runner,
 # using DATABASE_URL from .env (against a locally-installed Postgres).

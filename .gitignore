@@ -1,0 +1,10 @@
+# Secrets in either project; example files are safe to track.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local tooling and generated reports.
+coverage/
+*.log
+.DS_Store

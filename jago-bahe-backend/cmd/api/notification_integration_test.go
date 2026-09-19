@@ -48,7 +48,6 @@ func TestIntegration_NotificationLoop(t *testing.T) {
 		DatabaseURL: dbURL, JWTSecret: "integration-secret", JWTTTL: time.Hour,
 		ValidityThreshold: 1,
 		ResponseDeadline:  7 * 24 * time.Hour, BlockerReviewWindow: 72 * time.Hour,
-		AuthRateLimit: 0, WriteRateLimit: 0, RateLimitWindow: time.Minute,
 	}
 	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
 	router := newRouter(cfg, pool, quiet)
@@ -490,7 +489,6 @@ func TestIntegration_SecondDoneNotifiesAgain(t *testing.T) {
 		DatabaseURL: dbURL, JWTSecret: "integration-secret", JWTTTL: time.Hour,
 		ValidityThreshold: 1,
 		ResponseDeadline:  7 * 24 * time.Hour, BlockerReviewWindow: 72 * time.Hour,
-		AuthRateLimit: 0, WriteRateLimit: 0, RateLimitWindow: time.Minute,
 	}
 	router := newRouter(cfg, pool, slog.New(slog.NewTextHandler(io.Discard, nil)))
 

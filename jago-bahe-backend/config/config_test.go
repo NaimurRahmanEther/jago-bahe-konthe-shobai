@@ -14,9 +14,6 @@ func valid() *Config {
 		ValidityThreshold:   5,
 		ResponseDeadline:    7 * 24 * time.Hour,
 		BlockerReviewWindow: 72 * time.Hour,
-		AuthRateLimit:       20,
-		WriteRateLimit:      60,
-		RateLimitWindow:     time.Minute,
 	}
 }
 
@@ -32,7 +29,6 @@ func TestConfigValidate(t *testing.T) {
 		{"D must be positive", func(c *Config) { c.ResponseDeadline = -time.Hour }, true},
 		{"R must be positive", func(c *Config) { c.BlockerReviewWindow = 0 }, true},
 		{"JWT TTL must be positive", func(c *Config) { c.JWTTTL = 0 }, true},
-		{"rate-limit window must be positive", func(c *Config) { c.RateLimitWindow = 0 }, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -43,6 +39,38 @@ func TestConfigValidate(t *testing.T) {
 				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestMalformedEnvironment(t *testing.T) {
+	keys := []string{"VALIDITY_THRESHOLD", "JWT_TTL", "RESPONSE_DEADLINE", "BLOCKER_REVIEW_WINDOW"}
+	for _, key := range keys {
+		t.Setenv(key, "")
+	}
+	if err := validateEnvironment(); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range keys {
+		t.Run(key, func(t *testing.T) {
+			t.Setenv(key, "not-a-number-or-duration")
+			if err := validateEnvironment(); err == nil {
+				t.Fatalf("expected malformed %s to be rejected", key)
+			}
+		})
+	}
+}
+
+func TestAllowedOrigins(t *testing.T) {
+	c := valid()
+	c.AllowedOrigins = []string{"https://app.vercel.app"}
+	if err := c.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	for _, origin := range []string{"*", "https://*.vercel.app", "https://app.vercel.app/path", "https://user:pass@app.vercel.app"} {
+		c.AllowedOrigins = []string{origin}
+		if c.Validate() == nil {
+			t.Fatalf("accepted unsafe origin %s", origin)
+		}
 	}
 }
 

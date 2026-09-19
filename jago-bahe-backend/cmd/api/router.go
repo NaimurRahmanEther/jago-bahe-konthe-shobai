@@ -80,6 +80,9 @@ func newRouter(cfg *config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Ha
 	// Auth primitives.
 	tokens := auth.NewManager(cfg.JWTSecret, cfg.JWTTTL)
 	hasher := security.NewBcryptHasher()
+	if cfg.Production {
+		hasher = security.NewProductionBcryptHasher()
+	}
 
 	// Identity context (B1; B11 added official claims, resident verification, and
 	// the super admin's oversight read).
@@ -264,7 +267,7 @@ func newRouter(cfg *config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Ha
 		httpx.RequestID(),
 		httpx.Recoverer(log),
 		httpx.Logger(log),
-		httpx.RateLimit(cfg.AuthRateLimit, cfg.WriteRateLimit, cfg.RateLimitWindow), // cap auth + writes per IP
+		httpx.CORS(cfg.AllowedOrigins),
 		auth.Authenticate(tokens), // best-effort: populates claims for role gates
 	)
 }

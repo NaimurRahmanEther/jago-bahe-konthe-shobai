@@ -1,23 +1,22 @@
-# Multi-stage build producing small static binaries for both the api and worker.
 FROM golang:1.22-alpine AS build
-WORKDIR /src
 
-# Cache dependencies first.
+WORKDIR /app
+
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /out/api ./cmd/api
-RUN CGO_ENABLED=0 GOOS=linux go build -o /out/worker ./cmd/worker
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/api ./cmd/worker ./cmd/migrate ./cmd/setpassword
 
-FROM alpine:3.20
-RUN apk add --no-cache ca-certificates
-# Run as an unprivileged user, not root.
-RUN adduser -D -u 10001 app
+FROM alpine:3.21
+
 WORKDIR /app
-COPY --from=build /out/api /app/api
-COPY --from=build /out/worker /app/worker
+RUN apk add --no-cache ca-certificates tzdata \
+    && adduser -D -u 10001 app
+
+COPY --from=build /out/ ./
+COPY --from=build /app/migrations ./migrations
+
 USER app
 EXPOSE 8080
-# docker-compose overrides the command for the worker service.
-ENTRYPOINT ["/app/api"]
+CMD ["./api"]

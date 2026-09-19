@@ -1,33 +1,34 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute.jsx'
-import Landing from '../pages/public/Landing.jsx'
-import ProblemFeed from '../pages/public/ProblemFeed.jsx'
-import ProblemDetail from '../pages/public/ProblemDetail.jsx'
-import ReportProblem from '../pages/public/ReportProblem.jsx'
-import EditProblem from '../pages/resident/EditProblem.jsx'
-import MyReports from '../pages/resident/MyReports.jsx'
-import Notifications from '../pages/notifications/Notifications.jsx'
-import OfficialDirectory from '../pages/public/OfficialDirectory.jsx'
-import SeatActivity from '../pages/public/SeatActivity.jsx'
-import Scorecard from '../pages/public/Scorecard.jsx'
-import Register from '../pages/auth/Register.jsx'
-import RegisterOfficial from '../pages/auth/RegisterOfficial.jsx'
-import Login from '../pages/auth/Login.jsx'
-import OfficialDashboard from '../pages/official/OfficialDashboard.jsx'
-import CaseDetail from '../pages/official/CaseDetail.jsx'
-import Observation from '../pages/official/Observation.jsx'
-import AdminHome from '../pages/admin/AdminHome.jsx'
-import Moderation from '../pages/admin/Moderation.jsx'
-import Residents from '../pages/admin/Residents.jsx'
-import Queue from '../pages/admin/Queue.jsx'
-import Validating from '../pages/admin/Validating.jsx'
-import AssignmentPanel from '../pages/admin/AssignmentPanel.jsx'
-import Forwarding from '../pages/admin/Forwarding.jsx'
-import ForwardingPanel from '../pages/admin/ForwardingPanel.jsx'
-import ForwardingQueue from '../pages/super/ForwardingQueue.jsx'
-import ForwardPanel from '../pages/super/ForwardPanel.jsx'
-import ClaimsReview from '../pages/claims/ClaimsReview.jsx'
-import Oversight from '../pages/super/Oversight.jsx'
+const Landing = lazy(() => import('../pages/public/Landing.jsx'))
+const ProblemFeed = lazy(() => import('../pages/public/ProblemFeed.jsx'))
+const ProblemDetail = lazy(() => import('../pages/public/ProblemDetail.jsx'))
+const ReportProblem = lazy(() => import('../pages/public/ReportProblem.jsx'))
+const EditProblem = lazy(() => import('../pages/resident/EditProblem.jsx'))
+const MyReports = lazy(() => import('../pages/resident/MyReports.jsx'))
+const Notifications = lazy(() => import('../pages/notifications/Notifications.jsx'))
+const OfficialDirectory = lazy(() => import('../pages/public/OfficialDirectory.jsx'))
+const SeatActivity = lazy(() => import('../pages/public/SeatActivity.jsx'))
+const Scorecard = lazy(() => import('../pages/public/Scorecard.jsx'))
+const Register = lazy(() => import('../pages/auth/Register.jsx'))
+const RegisterOfficial = lazy(() => import('../pages/auth/RegisterOfficial.jsx'))
+const Login = lazy(() => import('../pages/auth/Login.jsx'))
+const OfficialDashboard = lazy(() => import('../pages/official/OfficialDashboard.jsx'))
+const CaseDetail = lazy(() => import('../pages/official/CaseDetail.jsx'))
+const Observation = lazy(() => import('../pages/official/Observation.jsx'))
+const AdminHome = lazy(() => import('../pages/admin/AdminHome.jsx'))
+const Moderation = lazy(() => import('../pages/admin/Moderation.jsx'))
+const Residents = lazy(() => import('../pages/admin/Residents.jsx'))
+const Queue = lazy(() => import('../pages/admin/Queue.jsx'))
+const Validating = lazy(() => import('../pages/admin/Validating.jsx'))
+const AssignmentPanel = lazy(() => import('../pages/admin/AssignmentPanel.jsx'))
+const Forwarding = lazy(() => import('../pages/admin/Forwarding.jsx'))
+const ForwardingPanel = lazy(() => import('../pages/admin/ForwardingPanel.jsx'))
+const ForwardingQueue = lazy(() => import('../pages/super/ForwardingQueue.jsx'))
+const ForwardPanel = lazy(() => import('../pages/super/ForwardPanel.jsx'))
+const ClaimsReview = lazy(() => import('../pages/claims/ClaimsReview.jsx'))
+const Oversight = lazy(() => import('../pages/super/Oversight.jsx'))
 
 export default function AppRoutes() {
   return (
@@ -47,7 +48,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<Login />} />
 
       {/* any signed-in role (B21). ProtectedRoute with NO allowedRoles means
-          "signed in, any role" — supported since F3 and first used here, because a
+          "signed in, any role" â€” supported since F3 and first used here, because a
           notification is about the CALLER rather than about their office. Roles
           stay flat: this is not a role widening, it is the absence of a role
           question. */}
@@ -104,7 +105,7 @@ export default function AppRoutes() {
         }
       />
       {/* Every official may open this; the list is empty for one who monitors
-          nobody. Seniority is not a client-side fact — the backend decides who
+          nobody. Seniority is not a client-side fact â€” the backend decides who
           appears here, from the ladder (A.5.7). */}
       <Route
         path="/official/observations"
@@ -197,10 +198,10 @@ export default function AppRoutes() {
         }
       />
 
-      {/* super admin — a flat fourth role, NOT a superset of admin (it is refused
+      {/* super admin â€” a flat fourth role, NOT a superset of admin (it is refused
           every /admin route above by ProtectedRoute).
           /super stays the read-only oversight feed: the role oversees union admins
-          and never overrides them. Forwarding below is not a counter-example — it
+          and never overrides them. Forwarding below is not a counter-example â€” it
           is a FRESH decision on a report no admin was entitled to decide, not the
           reversal of one that was made (A.3.8). It gets its own route so the page
           whose whole point is having no controls keeps having none. */}

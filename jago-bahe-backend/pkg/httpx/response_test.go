@@ -3,10 +3,37 @@ package httpx_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"jago-bahe-backend/pkg/httpx"
 )
+
+func TestDecodeRequiresOneBoundedJSONValue(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		body   string
+		status int
+	}{
+		{"valid", `{"name":"test"}`, 200},
+		{"whitespace", "{\"name\":\"test\"}\n  ", 200},
+		{"second value", `{} {}`, 400},
+		{"trailing garbage", `{} invalid`, 400},
+		{"empty", "", 400},
+		{"oversized value", `{"name":"` + strings.Repeat("a", 1<<20) + `"}`, 413},
+		{"oversized trailing whitespace", `{}` + strings.Repeat(" ", 1<<20), 413},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tc.body))
+			var body map[string]string
+			ok := httpx.Decode(rec, req, &body)
+			if ok != (tc.status == 200) || rec.Code != tc.status {
+				t.Fatalf("Decode = %v, status = %d; want status %d", ok, rec.Code, tc.status)
+			}
+		})
+	}
+}
 
 // TestJSONNilWritesNullNotAnEmptyBody pins the "null-shaped, never not-found"
 // contract at its source.

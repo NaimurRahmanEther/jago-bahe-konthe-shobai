@@ -5,7 +5,7 @@ export const client = axios.create({ baseURL: API_URL })
 
 let authToken = null
 
-/** Called by AuthContext on login/logout (F3) so the request interceptor can attach the JWT. */
+/** Called by AuthProvider so the request interceptor can attach the JWT. */
 export function setAuthToken(token) {
   authToken = token
 }

@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+bin
+out
+vendor
+*.exe
+*.test
+*.log
+coverage*
+tmp
+.idea
+.vscode

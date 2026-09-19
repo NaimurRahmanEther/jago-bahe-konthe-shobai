@@ -1,0 +1,75 @@
+# Render Blueprint. These are paid resources; review the plan before deploying.
+# Keep API, worker, and database in the same region.
+services:
+  - type: web
+    name: jago-bahe-api
+    runtime: docker
+    region: singapore
+    plan: 0.5c-512mb
+    dockerfilePath: ./jago-bahe-backend/Dockerfile
+    dockerContext: ./jago-bahe-backend
+    dockerCommand: /app/api
+    preDeployCommand: /app/migrate up
+    healthCheckPath: /api/health
+    autoDeployTrigger: off
+    envVars:
+      - fromGroup: jago-bahe-settings
+      - key: HTTP_ADDR
+        value: "0.0.0.0:10000"
+      - key: PORT
+        value: "10000"
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jago-bahe-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+  - type: worker
+    name: jago-bahe-worker
+    runtime: docker
+    region: singapore
+    plan: 0.5c-512mb
+    dockerfilePath: ./jago-bahe-backend/Dockerfile
+    dockerContext: ./jago-bahe-backend
+    dockerCommand: /app/worker
+    # Only the API deploy runs migrations; never run two migration jobs together.
+    autoDeployTrigger: off
+    maxShutdownDelaySeconds: 60
+    envVars:
+      - fromGroup: jago-bahe-settings
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jago-bahe-db
+          property: connectionString
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: jago-bahe-api
+          envVarKey: JWT_SECRET
+
+databases:
+  - name: jago-bahe-db
+    region: singapore
+    plan: 0.1c-256mb
+    postgresMajorVersion: "16"
+    databaseName: jago
+    user: jago
+    diskSizeGB: 5
+    ipAllowList: []
+
+envVarGroups:
+  - name: jago-bahe-settings
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: JWT_TTL
+        value: 24h
+      - key: VALIDITY_THRESHOLD
+        value: "5"
+      - key: RESPONSE_DEADLINE
+        value: 168h
+      - key: BLOCKER_REVIEW_WINDOW
+        value: 72h

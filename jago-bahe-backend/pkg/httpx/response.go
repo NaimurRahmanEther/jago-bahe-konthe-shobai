@@ -6,6 +6,7 @@ package httpx
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -56,7 +57,20 @@ func Error(w http.ResponseWriter, status int, code, message string) {
 func Decode(w http.ResponseWriter, r *http.Request, dst any) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(dst); err != nil {
+	err := dec.Decode(dst)
+	if err == nil {
+		// A request must contain exactly one JSON value. Reading to EOF also
+		// enforces the size limit for trailing whitespace and extra content.
+		var extra any
+		if tailErr := dec.Decode(&extra); tailErr != io.EOF {
+			if tailErr == nil {
+				err = errors.New("multiple JSON values")
+			} else {
+				err = tailErr
+			}
+		}
+	}
+	if err != nil {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
 			Error(w, http.StatusRequestEntityTooLarge, "body_too_large", "Request body is too large.")

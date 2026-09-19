@@ -66,7 +66,6 @@ func TestIntegration_ProblemSlice(t *testing.T) {
 		DatabaseURL: dbURL, JWTSecret: "integration-secret", JWTTTL: time.Hour,
 		ValidityThreshold: 1,
 		ResponseDeadline:  7 * 24 * time.Hour, BlockerReviewWindow: 72 * time.Hour,
-		AuthRateLimit: 0, WriteRateLimit: 0, RateLimitWindow: time.Minute, // 0 = limiter off for the test
 	}
 	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
 	router := newRouter(cfg, pool, quiet)

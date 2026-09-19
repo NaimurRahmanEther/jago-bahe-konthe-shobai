@@ -1,8 +1,9 @@
-import { createContext, useCallback, useEffect, useState } from 'react'
+import { useCallback, useLayoutEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import * as authApi from '../lib/api/auth.js'
 import { setAuthToken } from '../lib/api/client.js'
 
-export const AuthContext = createContext(null)
+import { AuthContext } from './context.js'
 
 const STORAGE_KEY = 'jago-bahe-auth'
 
@@ -16,9 +17,11 @@ function readStoredSession() {
 }
 
 export function AuthProvider({ children }) {
+  const queryClient = useQueryClient()
   const [session, setSession] = useState(readStoredSession)
 
-  useEffect(() => {
+  // Restore credentials before child query effects issue their first requests.
+  useLayoutEffect(() => {
     setAuthToken(session?.token ?? null)
   }, [session])
 
@@ -26,9 +29,13 @@ export function AuthProvider({ children }) {
     const result = await authApi.login({ phone, password })
     const next = { token: result.token, role: result.role, user: result.user }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    setAuthToken(next.token)
+    // Some role-specific queries use constant keys. Never retain another
+    // account's cached responses or in-flight queries across session changes.
+    queryClient.clear()
     setSession(next)
     return next
-  }, [])
+  }, [queryClient])
 
   const register = useCallback((payload) => authApi.register(payload), [])
 
@@ -52,8 +59,10 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
+    setAuthToken(null)
+    queryClient.clear()
     setSession(null)
-  }, [])
+  }, [queryClient])
 
   const value = {
     user: session?.user ?? null,

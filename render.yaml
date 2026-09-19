@@ -1,15 +1,13 @@
-# Render Blueprint. These are paid resources; review the plan before deploying.
-# Keep API, worker, and database in the same region.
+# Free Render API and PostgreSQL; the free database expires after 30 days.
 services:
   - type: web
     name: jago-bahe-api
     runtime: docker
     region: singapore
-    plan: 0.5c-512mb
+    plan: free
     dockerfilePath: ./jago-bahe-backend/Dockerfile
     dockerContext: ./jago-bahe-backend
-    dockerCommand: /app/api
-    preDeployCommand: /app/migrate up
+    dockerCommand: /bin/sh -c '/app/migrate up && exec /app/api'
     healthCheckPath: /api/health
     autoDeployTrigger: off
     envVars:
@@ -27,37 +25,14 @@ services:
       - key: JWT_SECRET
         generateValue: true
 
-  - type: worker
-    name: jago-bahe-worker
-    runtime: docker
-    region: singapore
-    plan: 0.5c-512mb
-    dockerfilePath: ./jago-bahe-backend/Dockerfile
-    dockerContext: ./jago-bahe-backend
-    dockerCommand: /app/worker
-    # Only the API deploy runs migrations; never run two migration jobs together.
-    autoDeployTrigger: off
-    maxShutdownDelaySeconds: 60
-    envVars:
-      - fromGroup: jago-bahe-settings
-      - key: DATABASE_URL
-        fromDatabase:
-          name: jago-bahe-db
-          property: connectionString
-      - key: JWT_SECRET
-        fromService:
-          type: web
-          name: jago-bahe-api
-          envVarKey: JWT_SECRET
 
 databases:
   - name: jago-bahe-db
     region: singapore
-    plan: 0.1c-256mb
+    plan: free
     postgresMajorVersion: "16"
     databaseName: jago
     user: jago
-    diskSizeGB: 5
     ipAllowList: []
 
 envVarGroups:

@@ -2,37 +2,42 @@
 
 ## Render
 
-The repository root contains `render.yaml`, a Render Blueprint for the Docker API,
-background worker, and PostgreSQL 16. In Render, select **New > Blueprint**, connect
-this repository, and select that file. Review the paid service/database plans
-before creating resources. All three resources use Singapore; change all regions
-together before the first deployment if needed.
+The root render.yaml creates a free Docker API and free PostgreSQL 16 database
+in Singapore. Choose New > Blueprint in Render, connect your repository, and
+review that both resources show the Free plan. No worker is deployed.
 
-Render generates the JWT secret and supplies the internal database URL. The API
-binds to port 10000 and uses `/api/health` for readiness. The API's pre-deploy command
-runs `/app/migrate up`; the worker runs `/app/worker` using the same database and
-rule settings. No uploaded .env or Docker Compose invocation is needed on Render.
+Render supplies the database URL and generates the JWT secret. At each startup,
+the container runs migrations and starts the API only if they succeed. This uses
+no paid pre-deploy hook. Health checks use /api/health on port 10000. Automatic
+deploys are disabled; deploy the API manually after pushing changes.
 
-Automatic deploys are disabled to keep releases deliberate: deploy the API and
-verify successful migrations and health, then deploy the worker at the same commit.
-On initial Blueprint creation the worker may start before API migrations complete;
-its scan logs SQL errors and retries on the next one-minute tick. Confirm a clean
-scan after migration. Use backward-compatible schema changes because an existing
-worker can continue running during API migrations. Never run concurrent migrations.
+The free API sleeps after 15 minutes without traffic. Free Render PostgreSQL
+expires after 30 days; export your data before expiry. This is a temporary demo
+setup. Stay within free usage allowances and review billing limits in Render.
+See https://render.com/docs/free for current limitations.
+
+Automatic overdue escalation and observation updates are not scheduled because
+the worker is no longer deployed. The worker source remains available for manual use.
 
 Production mode refuses the three publicly documented seed passwords at login,
 including re-hashed copies, and refuses using them for new accounts. Seed records
 and history remain intact. Development-mode demo logins still work. Activate each
 legitimate seeded account by assigning a unique password with the included command.
 
-In the Render API service Shell, run the following, substituting the account ID:
+Free Render services do not provide a service Shell. To activate a seeded account,
+run the password command locally from the backend directory against the deployed
+DB: set DATABASE_URL to Render's external connection URL, temporarily allow your
+own public IP in database access settings, then run:
 
-```sh
-read -r -s -p 'New password: ' NEW_PASSWORD
-printf '\n'
-printf '%s' "$NEW_PASSWORD" | /app/setpassword acct-seed-super-1
-unset NEW_PASSWORD
+```powershell
+$secret = Read-Host 'New password' -AsSecureString
+$credential = New-Object System.Net.NetworkCredential('', $secret)
+$credential.Password | go run ./cmd/setpassword acct-seed-super-1
+Remove-Variable secret, credential
 ```
+
+Remove the temporary database IP access rule afterwards. Never commit database
+credentials. This updates only the explicitly named existing account.
 
 Use an independently generated password of 12-72 bytes for each account. The
 command reads stdin, prints no password, and updates only that account's password
@@ -59,8 +64,7 @@ Check deployment logs and perform live integration checks before public launch.
 Field definitions: [Render Blueprint reference](https://render.com/docs/blueprint-spec).
 
 The Dockerfile lives in `jago-bahe-backend/`; `docker-compose.yml` lives at the
-repository root. It runs the backend API, PostgreSQL, migrations, and the required
-background escalation worker on `app-net`. The two-stage Dockerfile builds static
+repository root. It runs the backend API, PostgreSQL, and migrations on `app-net`. The two-stage Dockerfile builds static
 Go binaries and copies them and the migrations into a non-root Alpine runtime.
 
 ## Start from the repository root
@@ -69,7 +73,7 @@ Go binaries and copies them and the migrations into a non-root Alpine runtime.
 cp jago-bahe-backend/.env.docker.example jago-bahe-backend/.env
 # Set independent random POSTGRES_PASSWORD and JWT_SECRET values in that file.
 docker compose --env-file jago-bahe-backend/.env config --quiet
-docker compose --env-file jago-bahe-backend/.env up -d --build
+docker compose --env-file jago-bahe-backend/.env up -d --build --remove-orphans
 docker compose --env-file jago-bahe-backend/.env ps -a
 curl --fail http://localhost:8080/api/health
 ```
@@ -87,7 +91,7 @@ application settings. Compose overrides local database settings to connect to `d
 
 The API is published on port 8080 on all host interfaces. Configure your server
 firewall and HTTPS reverse proxy for hosting. PostgreSQL has no published host port.
-The API and worker start only after the database is healthy and migrations finish.
+The API starts only after the database is healthy and migrations finish.
 
 ## Updates and operations
 
@@ -95,11 +99,11 @@ Back up the database, pull the updated code, and run from the repository root:
 
 ```sh
 docker compose --env-file jago-bahe-backend/.env build --pull
-docker compose --env-file jago-bahe-backend/.env stop backend worker
+docker compose --env-file jago-bahe-backend/.env stop backend
 docker compose --env-file jago-bahe-backend/.env run --rm migrate
 # Continue only if migrations succeeded:
 docker compose --env-file jago-bahe-backend/.env up -d --remove-orphans
-docker compose --env-file jago-bahe-backend/.env logs --tail=100 backend worker migrate
+docker compose --env-file jago-bahe-backend/.env logs --tail=100 backend migrate
 ```
 
 When switching from the previous backend-directory Compose file, stop the old

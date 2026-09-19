@@ -9,7 +9,7 @@ A Go/PostgreSQL backend and React/Vite frontend for community reporting and reso
  docker-compose.yml          Backend deployment stack
  jago-bahe-backend/
    cmd/api/                  HTTP server and dependency wiring
-   cmd/worker/               Scheduled background work
+   cmd/worker/               Optional manual command (not deployed)
    cmd/migrate/              Database migration command
    config/                   Environment parsing and validation
    internal/<feature>/

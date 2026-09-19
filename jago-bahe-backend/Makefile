@@ -1,6 +1,6 @@
 .PHONY: up down migrate migrate-up migrate-down reset-problems reset-demo backdate-demo test run build tidy fmt
 
-# Bring up the full stack: postgres + migrate + api + worker.
+# Bring up the full stack: postgres + migrate + api.
 up:
 	docker compose --env-file .env -f ../docker-compose.yml up --build
 
@@ -56,7 +56,7 @@ test:
 run:
 	go run ./cmd/api
 
-# Compile both binaries locally.
+# Compile the Go commands locally.
 build:
 	go build ./...
 

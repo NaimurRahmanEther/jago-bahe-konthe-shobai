@@ -1,4 +1,5 @@
-# Free Render API and PostgreSQL; the free database expires after 30 days.
+# Render API using an externally managed PostgreSQL database (for example Neon).
+# Set DATABASE_URL in the Render dashboard; never commit it to this file.
 services:
   - type: web
     name: jago-bahe-api
@@ -19,21 +20,9 @@ services:
       - key: ALLOWED_ORIGINS
         sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: jago-bahe-db
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
         generateValue: true
-
-
-databases:
-  - name: jago-bahe-db
-    region: singapore
-    plan: free
-    postgresMajorVersion: "16"
-    databaseName: jago
-    user: jago
-    ipAllowList: []
 
 envVarGroups:
   - name: jago-bahe-settings

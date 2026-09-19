@@ -244,6 +244,10 @@ func newRouter(cfg *config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Ha
 	)
 
 	mux := http.NewServeMux()
+	// Render (and people checking a deployment in a browser) request the service
+	// URL at /.  Keep that URL useful instead of returning the default net/http
+	// 404; the actual API remains namespaced under /api.
+	mux.HandleFunc("GET /{$}", serviceHandler)
 	mux.HandleFunc("GET /api/health", healthHandler(pool))
 	identityHandler.Routes(mux, auth.RequireAdmin(), auth.RequireSuperAdmin(), auth.RequireClaimReviewer())
 	problemHandler.Routes(mux, auth.RequirePublic(), auth.RequireAdmin())
@@ -270,6 +274,15 @@ func newRouter(cfg *config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Ha
 		httpx.CORS(cfg.AllowedOrigins),
 		auth.Authenticate(tokens), // best-effort: populates claims for role gates
 	)
+}
+
+// serviceHandler identifies this host as the API and points callers to the
+// liveness endpoint. It deliberately exposes no application data.
+func serviceHandler(w http.ResponseWriter, r *http.Request) {
+	httpx.JSON(w, http.StatusOK, map[string]string{
+		"service": "jago-bahe-api",
+		"health":  "/api/health",
+	})
 }
 
 // healthHandler reports service liveness and database reachability.

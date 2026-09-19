@@ -2,19 +2,21 @@
 
 ## Render
 
-The root render.yaml creates a free Docker API and free PostgreSQL 16 database
-in Singapore. Choose New > Blueprint in Render, connect your repository, and
-review that both resources show the Free plan. No worker is deployed.
+The root render.yaml creates a free Docker API in Singapore. It uses an
+externally managed PostgreSQL database such as Neon; no worker or Render
+database is deployed.
 
-Render supplies the database URL and generates the JWT secret. At each startup,
-the container runs migrations and starts the API only if they succeed. This uses
-no paid pre-deploy hook. Health checks use /api/health on port 10000. Automatic
-deploys are disabled; deploy the API manually after pushing changes.
+In the Render service environment, set `DATABASE_URL` to your external database
+connection string and set `ALLOWED_ORIGINS` to your frontend origin. Render
+generates the JWT secret. At each startup, the container runs migrations and
+starts the API only if they succeed. This uses no paid pre-deploy hook. Health
+checks use /api/health on port 10000. Automatic deploys are disabled; deploy the
+API manually after pushing changes.
 
-The free API sleeps after 15 minutes without traffic. Free Render PostgreSQL
-expires after 30 days; export your data before expiry. This is a temporary demo
-setup. Stay within free usage allowances and review billing limits in Render.
-See https://render.com/docs/free for current limitations.
+The free API sleeps after 15 minutes without traffic. Your external database's
+availability, backup, and billing rules are managed by its provider. This is a
+temporary demo setup. Stay within free usage allowances and review billing
+limits in Render. See https://render.com/docs/free for current limitations.
 
 Automatic overdue escalation and observation updates are not scheduled because
 the worker is no longer deployed. The worker source remains available for manual use.

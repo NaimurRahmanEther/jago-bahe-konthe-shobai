@@ -1,6 +1,5 @@
-<<<<<<< HEAD
-# Jago Bahe
 
+<<<<<<< HEAD
 A Go/PostgreSQL backend and React/Vite frontend for community reporting and resolution.
 
 ## Repository layout
@@ -89,6 +88,8 @@ and exact CORS origins as described in the backend README. The current browser s
 a bearer token in localStorage; an HttpOnly-cookie design would require coordinated
 backend authentication and CSRF changes, rather than a frontend-only substitution.
 =======
+=======
+>>>>>>> da92025f2b1a8a66b2d8bd9df2e0f130153b9241
 # জাগো বাহে কণ্ঠে সবাই (Jago Bahe Konthe Shobai)
 
 [![Go](https://img.shields.io/badge/backend-Go%201.22-00ADD8?logo=go&logoColor=white)](https://go.dev)

@@ -4,4 +4,6 @@
 //
 // This is the only env the app reads. There is no mock switch: the mock layer was
 // deleted in F15 and must not come back — see CLAUDE.md A.5.5.
-export const API_URL = import.meta.env.VITE_API_URL ?? '/api'
+// Dashboard values can be blank or include whitespace/trailing slashes.
+const configuredURL = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '')
+export const API_URL = configuredURL || '/api'

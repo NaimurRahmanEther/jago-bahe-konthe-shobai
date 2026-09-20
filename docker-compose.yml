@@ -13,14 +13,8 @@ services:
     environment:
       APP_ENV: production
       HTTP_ADDR: ":8080"
-      DATABASE_URL: "host=db port=5432 sslmode=disable"
-      PGUSER: ${POSTGRES_USER:-jago}
-      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the backend .env}
-      PGDATABASE: ${POSTGRES_DB:-jago}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the backend .env}
     depends_on:
-      db:
-        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped
@@ -43,23 +37,17 @@ services:
       - ./jago-bahe-backend/.env
     environment:
       APP_ENV: production
-      DATABASE_URL: "host=db port=5432 sslmode=disable"
-      PGUSER: ${POSTGRES_USER:-jago}
-      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the backend .env}
-      PGDATABASE: ${POSTGRES_DB:-jago}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the backend .env}
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
       - app-net
 
   db:
+    profiles: ["local-db"]
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-jago}
       POSTGRES_USER: ${POSTGRES_USER:-jago}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the backend .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

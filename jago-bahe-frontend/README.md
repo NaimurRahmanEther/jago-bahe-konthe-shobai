@@ -13,10 +13,40 @@ Optional `VITE_API_URL` changes the browser's API base URL; a different origin
 requires CORS support from that API. Values prefixed with VITE_ are public build-time
 configuration: never put secrets in them.
 
-For Vercel + Render hosting, set Vercel's `VITE_API_URL` to the Render API URL
-including `/api`, then rebuild. Set Render's `ALLOWED_ORIGINS` to your exact Vercel
-origin (no trailing slash). The included `vercel.json` handles SPA deep links.
-Use direct browser-to-Render API calls with the CORS settings described in the backend README.
+For Vercel + Render hosting, use these Vercel project settings:
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | `jago-bahe-frontend` |
+| Framework Preset | Vite |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Environment variable (Production and Preview) | `VITE_API_URL=/api` |
+
+Copy `.env.example` to `.env` for local configuration. The local `.env` is ignored
+by Git; set the variable in the Vercel dashboard separately. Deploy the current
+`vercel.json` with the frontend: its first rewrite forwards `/api/:path*` to
+`https://jago-bahe-api.onrender.com/api/:path*`, before the SPA fallback.
+Redeploy after changing environment variables because Vite embeds them at build time.
+
+Check `https://jago-bahe-konthe-shobai.vercel.app/api/health` after deployment.
+It should return JSON with `db: true`, not HTML. HTML means the deployed API
+rewrite is missing or the project Root Directory is wrong. `/api/areas` should
+also return JSON. The bare Render `/api` path has no handler; use `/api/health`
+to check the API. No backend router change is needed.
+
+Alternatively, direct browser-to-Render requests require both settings:
+
+```dotenv
+# Vercel environment (and local frontend .env if desired)
+VITE_API_URL=https://jago-bahe-api.onrender.com/api
+# Render environment
+ALLOWED_ORIGINS=https://jago-bahe-konthe-shobai.vercel.app
+```
+
+Redeploy both services for that alternative. The API base must include `/api`;
+the allowed origin must have no path or trailing slash. With the recommended
+same-origin Vercel proxy, browser requests do not need cross-origin CORS headers.
 
 ```sh
 npm run lint

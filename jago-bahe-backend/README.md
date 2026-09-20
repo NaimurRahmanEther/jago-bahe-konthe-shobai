@@ -73,7 +73,7 @@ Go binaries and copies them and the migrations into a non-root Alpine runtime.
 
 ```sh
 cp jago-bahe-backend/.env.docker.example jago-bahe-backend/.env
-# Set independent random POSTGRES_PASSWORD and JWT_SECRET values in that file.
+# Set your Neon DATABASE_URL and a random JWT_SECRET in that file.
 docker compose --env-file jago-bahe-backend/.env config --quiet
 docker compose --env-file jago-bahe-backend/.env up -d --build --remove-orphans
 docker compose --env-file jago-bahe-backend/.env ps -a
@@ -86,14 +86,16 @@ dollar signs. Never commit .env. The development JWT placeholder is rejected in
 production. The build context excludes .env files.
 
 Use `--env-file` in every command: service `env_file` supplies container variables,
-while the CLI option also supplies Compose's `${POSTGRES_PASSWORD}` substitutions.
-The project uses POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB. The Go processes
-use DATABASE_URL plus PGUSER, PGPASSWORD and PGDATABASE; DB_HOST/DB_PORT are not
-application settings. Compose overrides local database settings to connect to `db`.
+while the CLI option also supplies Compose's `${JWT_SECRET}` substitution.
+Both the API and migrations use DATABASE_URL from the backend .env, including
+Neon's TLS query parameters. Keep actual credentials only in the ignored .env.
+The optional `local-db` profile retains the local PostgreSQL service and its volume;
+to use it, set POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB, point DATABASE_URL
+at `db:5432`, and add `--profile local-db` to Compose commands.
 
 The API is published on port 8080 on all host interfaces. Configure your server
 firewall and HTTPS reverse proxy for hosting. PostgreSQL has no published host port.
-The API starts only after the database is healthy and migrations finish.
+The API starts only after migrations finish successfully against DATABASE_URL.
 
 ## Updates and operations
 
